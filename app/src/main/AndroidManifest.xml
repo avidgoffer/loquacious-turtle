@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.abercrombiefitch.afpromotionalcard" >
+    package="com.abercrombiefitch.afpromotions" >
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
         <activity
-            android:name=".MainActivity"
+            android:name="com.abercrombiefitch.afpromotions.MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar" >
             <intent-filter>
@@ -19,6 +19,11 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="com.abercrombiefitch.afpromotions.PromotionCardActivity"
+            android:label="@string/title_activity_promotion_card"
+            android:theme="@style/AppTheme.NoActionBar" >
         </activity>
     </application>
 
