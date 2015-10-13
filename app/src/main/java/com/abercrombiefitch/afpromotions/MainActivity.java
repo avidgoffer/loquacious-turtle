@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.LruCache;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TableLayout;
 
@@ -80,12 +79,12 @@ public class MainActivity extends AppCompatActivity {
         new GetPromotionsTask((TableLayout) findViewById(R.id.tableLayout), _memoryCache, _diskLruCache, _diskCacheLock).execute();
     }
 
-    @Override
+    /*@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
-    }
+    }*/
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -100,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public int doMath(){
+        return 3+3;
     }
 
 }
