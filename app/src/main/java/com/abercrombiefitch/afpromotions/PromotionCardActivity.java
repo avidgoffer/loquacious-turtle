@@ -88,4 +88,14 @@ public class PromotionCardActivity extends AppCompatActivity {
         new DownloadImageTask(_memoryCache, _diskLruCache, _diskCacheLock, (ImageView) findViewById(R.id.promotionImage)).execute(_promotion.imageUrl);
     }
 
+    @Override
+    protected void onDestroy() {
+        try {
+            _diskLruCache.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        super.onDestroy();
+    }
+
 }

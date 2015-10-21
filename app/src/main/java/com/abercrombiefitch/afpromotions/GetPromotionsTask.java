@@ -14,6 +14,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TextView;
 
@@ -54,6 +55,12 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
     }
 
     protected void onPreExecute() {
+        _tableLayout.removeAllViews();
+
+        ProgressBar progressBar = new ProgressBar(_tableLayout.getContext());
+        progressBar.setIndeterminate(true);
+
+        _tableLayout.addView(progressBar);
     }
 
     protected void onPostExecute(ArrayList<Promotion> promotions) {
