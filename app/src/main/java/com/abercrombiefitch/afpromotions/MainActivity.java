@@ -79,6 +79,16 @@ public class MainActivity extends AppCompatActivity {
         new GetPromotionsTask((TableLayout) findViewById(R.id.tableLayout), _memoryCache, _diskLruCache, _diskCacheLock).execute();
     }
 
+    @Override
+    protected void onDestroy() {
+        try {
+            _diskLruCache.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        super.onDestroy();
+    }
+
     /*@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.

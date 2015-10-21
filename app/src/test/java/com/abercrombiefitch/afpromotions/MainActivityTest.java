@@ -25,7 +25,12 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
     @Test
     public void testDoMath() {
-        assertEquals(_mainActivity.doMath(), 5); // should fail
         assertEquals(_mainActivity.doMath(), 6); // should pass
+    }
+
+
+    @Test
+    public void testDoMath2() {
+        assertEquals(_mainActivity.doMath(), 5); // should fail
     }
 }

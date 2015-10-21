@@ -1,7 +1,10 @@
 package com.abercrombiefitch.afpromotions;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.util.JsonReader;
 import android.util.JsonToken;
@@ -32,6 +35,7 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
     private final LruCache<String, Bitmap> _memoryCache;
     private final DiskLruCache _diskCache;
     private final Object _diskCacheLock;
+    private final ConnectivityManager _connectivityManager;
 
     public GetPromotionsTask(TableLayout tableLayout) {
         this(tableLayout, null);
@@ -46,44 +50,59 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
         _memoryCache = memoryCache;
         _diskCache = diskCahce;
         _diskCacheLock = diskCacheLock;
+        _connectivityManager = (ConnectivityManager)_tableLayout.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
     }
 
     protected void onPreExecute() {
     }
 
     protected void onPostExecute(ArrayList<Promotion> promotions) {
+        final Context context = _tableLayout.getContext();
         _tableLayout.removeAllViews();
-        for (Promotion promotion : promotions) {
-            ImageView imageView = new ImageView(_tableLayout.getContext());
-            imageView.setImageBitmap(promotion.image);
-            imageView.setTag(promotion);
-            imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Promotion promotion = (Promotion) v.getTag();
-                    _tableLayout.getContext().startActivity(
-                            new Intent(_tableLayout.getContext().getApplicationContext(), PromotionCardActivity.class)
-                                    .putExtra("promotion", promotion));
-                }
-            });
+        if(promotions.isEmpty()){
 
-            TextView textView = new TextView(_tableLayout.getContext());
-            textView.setText(promotion.title);
+            NetworkInfo activeNetwork = _connectivityManager.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+            TextView textView = new TextView(context);
             textView.setGravity(Gravity.CENTER);
+            if(!isConnected) {
+                textView.setText("Please connect to the internet to receive promotions from Abercrombie & Fitch.");
+            } else {
+                textView.setText("No promotions received from Abercrombie & Fitch.");
+            }
+            _tableLayout.addView(textView);
+        } else {
+            for (Promotion promotion : promotions) {
+                ImageView imageView = new ImageView(_tableLayout.getContext());
+                imageView.setImageBitmap(promotion.image);
+                imageView.setTag(promotion);
+                imageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Promotion promotion = (Promotion) v.getTag();
+                        _tableLayout.getContext().startActivity(
+                                new Intent(context.getApplicationContext(), PromotionCardActivity.class)
+                                        .putExtra("promotion", promotion));
+                    }
+                });
 
-            LinearLayout linearLayout = new LinearLayout(_tableLayout.getContext());
-            linearLayout.setLayoutMode(LinearLayout.VERTICAL);
-            linearLayout.addView(imageView);
+                TextView textView = new TextView(context);
+                textView.setText(promotion.title);
+                textView.setGravity(Gravity.CENTER);
 
-            _tableLayout.addView(textView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            _tableLayout.addView(linearLayout);
+                LinearLayout linearLayout = new LinearLayout(context);
+                linearLayout.setLayoutMode(LinearLayout.VERTICAL);
+                linearLayout.addView(imageView);
 
-//            FrameLayout frameLayout = new FrameLayout(_tableLayout.getContext());
+                _tableLayout.addView(textView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                _tableLayout.addView(linearLayout);
+
+//            FrameLayout frameLayout = new FrameLayout(context);
 //            frameLayout.addView(imageView);
 //            tableRow.addView(frameLayout);
 
 //            for(PromotionButton promotionButton : promotion.buttons){
-//                Button button = new Button(_tableLayout.getContext());
+//                Button button = new Button(context);
 //                FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
 //                        FrameLayout.LayoutParams.WRAP_CONTENT,
 //                        FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -94,23 +113,20 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
 //                button.setTag(promotionButton);
 //                button.setOnClickListener(new View.OnClickListener() {
 //                    public void onClick(View v) {
-//                        _tableLayout.getContext().startActivity(new Intent(Intent.ACTION_VIEW,
+//                        context.startActivity(new Intent(Intent.ACTION_VIEW,
 //                                Uri.parse(((PromotionButton)v.getTag()).target)));
 //                    }
 //                });
 //            }
+            }
         }
     }
 
     protected ArrayList<Promotion> doInBackground(Void... params) {
         ArrayList<Promotion> retval = new ArrayList<>();
 
-        DiskLruCache.Snapshot snapshot = null;
-        try {
-            snapshot = _diskCache.get("json");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        DiskLruCache.Snapshot snapshot;
+        snapshot = getSnapshot("json");
         if(snapshot == null) {
             URL url;
             try {
@@ -119,6 +135,10 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
                 e.printStackTrace();
                 return retval;
             }
+
+            NetworkInfo activeNetwork = _connectivityManager.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+            if(!isConnected) return retval;
 
             HttpURLConnection urlConnection;
             try {
@@ -133,16 +153,12 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
                 inputStream = new BufferedInputStream(urlConnection.getInputStream());
                 synchronized (_diskCacheLock) {
                     DiskLruCache.Editor editor = _diskCache.edit("json");
-                    BufferedOutputStream stream = null;
-                    try {
-                        stream = new BufferedOutputStream(editor.newOutputStream(0));
+                    try (BufferedOutputStream stream = new BufferedOutputStream(editor.newOutputStream(0))) {
                         byte[] data = new byte[4096];
                         int bytesRead;
                         while ((bytesRead = inputStream.read(data, 0, 4096)) != -1) {
                             stream.write(data, 0, bytesRead);
                         }
-                    } finally {
-                        stream.close();
                     }
                     editor.commit();
                 }
@@ -160,14 +176,25 @@ public class GetPromotionsTask extends AsyncTask<Void, Void, ArrayList<Promotion
                     }
                 }
             }
+            snapshot = getSnapshot("json");
         }
         try {
+            assert snapshot != null;
             retval = readJsonStream(snapshot.getInputStream(0));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         return retval;
+    }
+
+    private DiskLruCache.Snapshot getSnapshot(final String key) {
+        try {
+            return _diskCache.get(key);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private ArrayList<Promotion> readJsonStream(InputStream in) throws IOException {
