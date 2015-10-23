@@ -40,10 +40,10 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
             List<ActivityManager.AppTask> runningTasks = manager.getAppTasks();
             if (runningTasks != null && runningTasks.size() > 0) {
                 runningTasks.get(0).finishAndRemoveTask();
+                _context.startActivity(
+                        new Intent(_context.getApplicationContext(), MainActivity.class)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
-            _context.startActivity(
-                    new Intent(_context.getApplicationContext(), MainActivity.class)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         }
     }
 }
